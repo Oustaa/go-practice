@@ -3,12 +3,17 @@
 - the project is a tasks/habbit tracking backend server, it provide functionalities such as adding tasks and organazing them by category, status, priority, and it should contain auth so each user should be able to manage his tasks. 
 (!!! OPTIONAL/ADD LATER: functionalities to add collaboration)
 
+Version One: Browser Based ( Golang, MySQL )
+Version Two: API BASED ( Golang, MySQL, React )
+  
 ## Setup
-- [ ] GIT/GitHub
-- [ ] Setup Routing
-- [ ] Docker ( MySQL, GO! )
-- [ ] Connect to database
-
+- [x] GIT/GitHub
+- [x] Setup Routing
+- [] Docker 
+    - [x] MySQL ( I should add volumes )
+    - [ ] GO! ( if added i should add network )
+- [x] Connect to database
+- [x] Setup migrations
 
 ## Functionalities
 - [ ] Tasks CRUD:
@@ -25,10 +30,10 @@
         - [ ] Update.
         - [ ] Delete.
     - [ ] Tasks Status CRUD:
-            - [ ] Read.
-            - [ ] Create.
-            - [ ] Update.
-            - [ ] Delete.
+        - [ ] Read.
+        - [ ] Create.
+        - [ ] Update.
+        - [ ] Delete.
 - [ ] Auth:
     - [ ] Login
     - [ ] Singin
