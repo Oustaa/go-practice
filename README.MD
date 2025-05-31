@@ -9,11 +9,12 @@ Version Two: API BASED ( Golang, MySQL, React )
 ## Setup
 - [x] GIT/GitHub
 - [x] Setup Routing
-- [] Docker 
+- [x] Docker ( Done for now ) 
     - [x] MySQL ( I should add volumes )
     - [ ] GO! ( if added i should add network )
 - [x] Connect to database
 - [x] Setup migrations
+
 
 ## Functionalities
 - [ ] Tasks CRUD:
@@ -46,4 +47,12 @@ Version Two: API BASED ( Golang, MySQL, React )
 
 
 ## Technologies
-- Go, Mysql/Sqlit, Docker, HTML, CSS, !testing.
+- Go, Mysql/Sqlit, Docker, HTML, CSS, !testing
+
+## Build For the API, and WEB
+- Routes Groups: /api and /nothig
+- Handlers:
+    - For the web: Returns View ( html, css, js )
+    - For the api: Returns json ( json )
+- Services:
+    - Encapsulate the business logic (e.g Create A Task, Delete a Task)
