@@ -20,7 +20,7 @@ func main() {
 		log.Fatalf("Error (server.ListenAndServe()): %v", err)
 	}
 
-	handler := routes.GetRouter()
+	handler := routes.GetRoutes()
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", PORT),
