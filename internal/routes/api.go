@@ -1,17 +1,20 @@
 package routes
 
 import (
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
+	"github.com/oustaa/go-practice/internal/Handlers/api"
+	"github.com/oustaa/go-practice/internal/app"
+	"github.com/oustaa/go-practice/internal/store"
 )
 
-func GetAPIRoutes() *chi.Mux {
+func GetAPIRoutes(app *app.Application) *chi.Mux {
 	apiRoutes := chi.NewRouter()
 
-	apiRoutes.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("API Root"))
-	})
+	TaskStore := store.NewMySQLTasksService(app.DB)
+	taksHandler := api.NewTaskshandler(TaskStore)
+
+	apiRoutes.Get("/tasks", taksHandler.GetTasks)
+	apiRoutes.Post("/tasks", taksHandler.PostTasks)
 
 	return apiRoutes
 }
