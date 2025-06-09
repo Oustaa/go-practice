@@ -12,3 +12,6 @@ services:
       MYSQL_PASSWORD: password
     restart: unless-stopped
 
+volumes:
+  volumes:
+
