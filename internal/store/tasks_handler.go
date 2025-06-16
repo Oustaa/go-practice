@@ -47,13 +47,23 @@ func (th MySQLTasksService) GetTasks() ([]Task, error) {
 	return tasks, nil
 }
 
-func (th MySQLTasksService) GetTaskById() (Task, error) {
-	task := Task{}
+func (th MySQLTasksService) GetTaskById(id int64) (*Task, error) {
+	task := &Task{}
+
+	// should handel the case where description is null, and make join to the two other tables
+	query := "SELECT id, title, description, category_id, status_id, created_at, updated_at FROM tasks where id = ?"
+
+	err := th.DB.QueryRow(query, id).Scan(&task.ID, &task.Title, &task.Description, &task.CategoryID, &task.StatusID, &task.CreatedAt, &task.UpdatedAt)
+	if err != nil {
+		// should handle no row found
+		return nil, err
+	}
 
 	return task, nil
 }
 
 func (th MySQLTasksService) CreateTask(task Task) (Task, error) {
+	// this is in a must need for validations
 	stmt, err := th.DB.Prepare(`
 		INSERT INTO tasks(title, status_id, category_id) VALUES(?, ?, ?);`)
 	if err != nil {
@@ -75,6 +85,17 @@ func (th MySQLTasksService) UpdateTasks() (Task, error) {
 	return task, nil
 }
 
-func (th MySQLTasksService) DeleteTasks() error {
+func (th MySQLTasksService) DeleteTasks(id int64) error {
+	query := "DELETE FROM tasks WHERE id = ?"
+
+	_, err := th.DB.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func (th MySQLTasksService) UpdateTask(id int64, task *Task) (*Task, error) {
+	return task, nil
 }

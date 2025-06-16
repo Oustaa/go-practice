@@ -13,8 +13,10 @@ func GetAPIRoutes(app *app.Application) *chi.Mux {
 	TaskStore := store.NewMySQLTasksService(app.DB)
 	taksHandler := api.NewTaskshandler(TaskStore)
 
-	apiRoutes.Get("/tasks", taksHandler.GetTasks)
-	apiRoutes.Post("/tasks", taksHandler.PostTasks)
+	apiRoutes.Get("/tasks", taksHandler.GetTasksHandler)
+	apiRoutes.Get("/tasks/{id}", taksHandler.GetTaskByIdHandler)
+	apiRoutes.Post("/tasks", taksHandler.PostTasksHandler)
+	apiRoutes.Delete("/tasks/{id}", taksHandler.DeleteTaskHandler)
 
 	return apiRoutes
 }
