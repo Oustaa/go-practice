@@ -17,6 +17,7 @@ func GetAPIRoutes(app *app.Application) *chi.Mux {
 	apiRoutes.Get("/tasks/{id}", taksHandler.GetTaskByIdHandler)
 	apiRoutes.Post("/tasks", taksHandler.PostTasksHandler)
 	apiRoutes.Delete("/tasks/{id}", taksHandler.DeleteTaskHandler)
+	apiRoutes.Put("/tasks/{id}", taksHandler.PutTaskHandler)
 
 	return apiRoutes
 }

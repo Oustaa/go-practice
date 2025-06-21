@@ -17,11 +17,11 @@ Version Two: API BASED ( Golang, MySQL, React )
 
 
 ## Functionalities
-- [ ] Tasks CRUD:
-    - [ ] Read.
-    - [ ] Create.
-    - [ ] Update.
-    - [ ] Delete.
+- [x] Tasks CRUD:
+    - [x] Read.
+    - [x] Create.
+    - [x] Update.
+    - [x] Delete.
 - [ ] Make tasks as completed
 - [ ] Administration:
     - [ ] Manage Account ?

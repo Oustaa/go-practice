@@ -2,10 +2,21 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 )
 
 // type definition for the actuall task
 type Task struct {
+	ID          int            `json:"id"`
+	Title       string         `json:"title"`
+	Description sql.NullString `json:"-"`
+	CreatedAt   string         `json:"created_at"`
+	UpdatedAt   string         `json:"updated_at"`
+	CategoryID  int            `json:"category_id"`
+	StatusID    int            `json:"status_id"`
+}
+
+type TaskResponse struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -13,6 +24,18 @@ type Task struct {
 	UpdatedAt   string `json:"updated_at"`
 	CategoryID  int    `json:"category_id"`
 	StatusID    int    `json:"status_id"`
+}
+
+func (t *Task) ToResponse() *TaskResponse {
+	return &TaskResponse{
+		ID:          t.ID,
+		Title:       t.Title,
+		Description: t.Description.String,
+		CreatedAt:   t.CreatedAt,
+		UpdatedAt:   t.UpdatedAt,
+		CategoryID:  t.CategoryID,
+		StatusID:    t.StatusID,
+	}
 }
 
 type MySQLTasksService struct {
@@ -55,7 +78,9 @@ func (th MySQLTasksService) GetTaskById(id int64) (*Task, error) {
 
 	err := th.DB.QueryRow(query, id).Scan(&task.ID, &task.Title, &task.Description, &task.CategoryID, &task.StatusID, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
-		// should handle no row found
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // or return a custom 404 error
+		}
 		return nil, err
 	}
 
@@ -79,12 +104,6 @@ func (th MySQLTasksService) CreateTask(task Task) (Task, error) {
 	return task, nil
 }
 
-func (th MySQLTasksService) UpdateTasks() (Task, error) {
-	task := Task{}
-
-	return task, nil
-}
-
 func (th MySQLTasksService) DeleteTasks(id int64) error {
 	query := "DELETE FROM tasks WHERE id = ?"
 
@@ -97,5 +116,12 @@ func (th MySQLTasksService) DeleteTasks(id int64) error {
 }
 
 func (th MySQLTasksService) UpdateTask(id int64, task *Task) (*Task, error) {
+	query := "UPDATE tasks set title = ?, description = ?, status_id = ?, category_id = ? WHERE id = ?"
+
+	_, err := th.DB.Exec(query, task.Title, task.Description, task.StatusID, task.CategoryID, id)
+	if err != nil {
+		return nil, err
+	}
+
 	return task, nil
 }
