@@ -3,38 +3,49 @@ package store
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 // type definition for the actuall task
 type Task struct {
-	ID          int            `json:"id"`
-	Title       string         `json:"title"`
-	Description sql.NullString `json:"-"`
-	CreatedAt   string         `json:"created_at"`
-	UpdatedAt   string         `json:"updated_at"`
-	CategoryID  int            `json:"category_id"`
-	StatusID    int            `json:"status_id"`
+	ID          int          `json:"id"`
+	Title       string       `json:"title"`
+	Description string       `json:"description"`
+	CreatedAt   string       `json:"created_at"`
+	UpdatedAt   string       `json:"updated_at"`
+	Category    CategoryType `json:"category"`
+	Status      StatusType   `json:"status"`
+}
+
+type CategoryType struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
+}
+
+type StatusType struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 type TaskResponse struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-	CategoryID  int    `json:"category_id"`
-	StatusID    int    `json:"status_id"`
+	ID          int          `json:"id"`
+	Title       string       `json:"title"`
+	Description string       `json:"description"`
+	CreatedAt   string       `json:"created_at"`
+	UpdatedAt   string       `json:"updated_at"`
+	Category    CategoryType `json:"cateogry"`
+	Status      StatusType   `json:"status"`
 }
 
 func (t *Task) ToResponse() *TaskResponse {
 	return &TaskResponse{
 		ID:          t.ID,
 		Title:       t.Title,
-		Description: t.Description.String,
+		Description: t.Description,
 		CreatedAt:   t.CreatedAt,
 		UpdatedAt:   t.UpdatedAt,
-		CategoryID:  t.CategoryID,
-		StatusID:    t.StatusID,
+		Category:    t.Category,
+		Status:      t.Status,
 	}
 }
 
@@ -49,7 +60,13 @@ func NewMySQLTasksService(DB *sql.DB) *MySQLTasksService {
 func (th MySQLTasksService) GetTasks() ([]Task, error) {
 	var tasks []Task
 
-	query := "SELECT id, title, created_at, updated_at FROM tasks"
+	query := `
+		SELECT t.id, t.title, t.description, t.created_at, t.updated_at, st.name, st.id, cat.name, cat.id FROM tasks as t
+		JOIN tasks_categories as cat
+		ON cat.id = t.category_id
+		JOIN tasks_statuses as st
+		ON st.id = t.status_id
+	`
 
 	rows, err := th.DB.Query(query)
 	if err != nil {
@@ -59,7 +76,7 @@ func (th MySQLTasksService) GetTasks() ([]Task, error) {
 
 	var task Task
 	for rows.Next() {
-		if err := rows.Scan(&task.ID, &task.Title, &task.CreatedAt, &task.UpdatedAt); err != nil {
+		if err := rows.Scan(&task.ID, &task.Title, &task.Description, &task.CreatedAt, &task.UpdatedAt, &task.Status.Name, &task.Status.ID, &task.Category.Name, &task.Category.ID); err != nil {
 			return tasks, err
 		}
 		tasks = append(tasks, task)
@@ -76,7 +93,7 @@ func (th MySQLTasksService) GetTaskById(id int64) (*Task, error) {
 	// should handel the case where description is null, and make join to the two other tables
 	query := "SELECT id, title, description, category_id, status_id, created_at, updated_at FROM tasks where id = ?"
 
-	err := th.DB.QueryRow(query, id).Scan(&task.ID, &task.Title, &task.Description, &task.CategoryID, &task.StatusID, &task.CreatedAt, &task.UpdatedAt)
+	err := th.DB.QueryRow(query, id).Scan(&task.ID, &task.Title, &task.Description, &task.Category.ID, &task.Status.ID, &task.CreatedAt, &task.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil // or return a custom 404 error
@@ -92,12 +109,16 @@ func (th MySQLTasksService) CreateTask(task Task) (Task, error) {
 	stmt, err := th.DB.Prepare(`
 		INSERT INTO tasks(title, status_id, category_id) VALUES(?, ?, ?);`)
 	if err != nil {
+		fmt.Println(err.Error())
 		return task, err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(task.Title, task.StatusID, task.CategoryID)
+	fmt.Printf("%#v\n", task)
+
+	_, err = stmt.Exec(task.Title, task.Status.ID, task.Category.ID)
 	if err != nil {
+		fmt.Println(err.Error())
 		return task, err
 	}
 
@@ -118,7 +139,7 @@ func (th MySQLTasksService) DeleteTasks(id int64) error {
 func (th MySQLTasksService) UpdateTask(id int64, task *Task) (*Task, error) {
 	query := "UPDATE tasks set title = ?, description = ?, status_id = ?, category_id = ? WHERE id = ?"
 
-	_, err := th.DB.Exec(query, task.Title, task.Description, task.StatusID, task.CategoryID, id)
+	_, err := th.DB.Exec(query, task.Title, task.Description, task.Status.ID, task.Category.ID, id)
 	if err != nil {
 		return nil, err
 	}

@@ -131,15 +131,16 @@ func (th Taskshandler) PutTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if bodyTask.Description != nil {
-		task.Description = sql.NullString{String: *bodyTask.Description, Valid: true}
+		// task.Description = sql.NullString{String: *bodyTask.Description, Valid: true}
+		task.Description = *bodyTask.Description
 	}
 
 	if bodyTask.CategoryID != nil {
-		task.CategoryID = *bodyTask.CategoryID
+		task.Category.ID = *bodyTask.CategoryID
 	}
 
 	if bodyTask.StatusID != nil {
-		task.StatusID = *bodyTask.StatusID
+		task.Status.ID = *bodyTask.StatusID
 	}
 
 	if bodyTask.CreatedAt != nil {
