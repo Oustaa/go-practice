@@ -1,0 +1,31 @@
+# y: one two
+# 	# Outputs "hey", since this is the target name
+# 	@echo $@
+#
+# 	# Outputs all prerequisites newer than the target
+# 	@echo $?
+#
+# 	# Outputs all prerequisites
+# 	@echo $^
+#
+# 	# Outputs the first prerequisite
+# 	@echo $<
+#
+# 	@touch hey
+#
+# one:
+# 	@touch one
+#
+# two:
+# 	@touch two
+#
+# clean:
+# 	@rm -f hey one two
+db::  # Double colon allows separate rule definitions
+	@echo "DB operation"
+
+db::migrate
+	@echo "Running migrate"
+
+db:: rollback
+	@echo "Running rollback"
