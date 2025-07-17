@@ -12,6 +12,13 @@ import (
 	"github.com/oustaa/go-practice/internal/store"
 )
 
+type CreateTaskBody struct {
+	Title       string  `json:"title"`
+	Status_id   int     `json:"status_id"`
+	Category_id int     `json:"category_id"`
+	Description *string `json:"description"`
+}
+
 type Taskshandler struct {
 	TasksStore *store.MySQLTasksService
 }
@@ -59,21 +66,35 @@ func (th Taskshandler) GetTaskByIdHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(task.ToResponse())
-
+	json.NewEncoder(w).Encode(task)
 }
 
 func (th Taskshandler) PostTasksHandler(w http.ResponseWriter, r *http.Request) {
 	// Get The Data from the body
-	var task store.Task // it is not the ideal way to get the Task struct
-	json.NewDecoder(r.Body).Decode(&task)
+	var taskBody CreateTaskBody
+	json.NewDecoder(r.Body).Decode(&taskBody)
 	defer r.Body.Close()
 
+	task := store.Task{
+		Title: taskBody.Title,
+		Category: store.CategoryType{
+			ID: taskBody.Category_id,
+		},
+		Status: store.StatusType{
+			ID: taskBody.Status_id,
+		},
+		Description: taskBody.Description,
+	}
+
 	// Create the task
-	th.TasksStore.CreateTask(task)
+	createdTask, err := th.TasksStore.CreateTask(task)
+
+	if err != nil {
+		fmt.Printf("Error Creating the task: %#v", err)
+	}
 
 	w.Header().Add("Content-Type", "Application/json")
-	json.NewEncoder(w).Encode(task)
+	json.NewEncoder(w).Encode(createdTask)
 }
 
 func (th Taskshandler) DeleteTaskHandler(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +153,7 @@ func (th Taskshandler) PutTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 	if bodyTask.Description != nil {
 		// task.Description = sql.NullString{String: *bodyTask.Description, Valid: true}
-		task.Description = *bodyTask.Description
+		task.Description = bodyTask.Description
 	}
 
 	if bodyTask.CategoryID != nil {
@@ -156,5 +177,5 @@ func (th Taskshandler) PutTaskHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(task.ToResponse())
+	json.NewEncoder(w).Encode(task)
 }

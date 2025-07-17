@@ -10,7 +10,7 @@ import (
 type Task struct {
 	ID          int          `json:"id"`
 	Title       string       `json:"title"`
-	Description string       `json:"description"`
+	Description *string      `json:"description,omitempty"`
 	CreatedAt   string       `json:"created_at"`
 	UpdatedAt   string       `json:"updated_at"`
 	Category    CategoryType `json:"category"`
@@ -37,18 +37,6 @@ type TaskResponse struct {
 	Status      StatusType   `json:"status"`
 }
 
-func (t *Task) ToResponse() *TaskResponse {
-	return &TaskResponse{
-		ID:          t.ID,
-		Title:       t.Title,
-		Description: t.Description,
-		CreatedAt:   t.CreatedAt,
-		UpdatedAt:   t.UpdatedAt,
-		Category:    t.Category,
-		Status:      t.Status,
-	}
-}
-
 type MySQLTasksService struct {
 	DB *sql.DB
 }
@@ -61,8 +49,7 @@ func (th MySQLTasksService) GetTasks() ([]Task, error) {
 	var tasks []Task
 
 	query := `
-		SELECT t.id, t.title, t.description, t.created_at, t.updated_at, st.name, st.id, cat.name, cat.id FROM tasks as t
-		JOIN tasks_categories as cat
+		SELECT t.id, t.title, t.description, t.created_at, t.updated_at, st.name, st.id, cat.name, cat.id FROM tasks as t JOIN tasks_categories as cat
 		ON cat.id = t.category_id
 		JOIN tasks_statuses as st
 		ON st.id = t.status_id
@@ -90,13 +77,21 @@ func (th MySQLTasksService) GetTasks() ([]Task, error) {
 func (th MySQLTasksService) GetTaskById(id int64) (*Task, error) {
 	task := &Task{}
 
-	// should handel the case where description is null, and make join to the two other tables
-	query := "SELECT id, title, description, category_id, status_id, created_at, updated_at FROM tasks where id = ?"
+	fmt.Printf("passed id id %d\n", id)
 
-	err := th.DB.QueryRow(query, id).Scan(&task.ID, &task.Title, &task.Description, &task.Category.ID, &task.Status.ID, &task.CreatedAt, &task.UpdatedAt)
+	// should handel the case where description is null, and make join to the two other tables
+	query := `
+		SELECT t.id, t.title, t.description, t.created_at, t.updated_at, st.name, st.id, cat.name, cat.id FROM tasks as t JOIN tasks_categories as cat
+		ON cat.id = t.category_id
+		JOIN tasks_statuses as st
+		ON st.id = t.status_id
+		WHERE t.id = ?;
+	`
+
+	err := th.DB.QueryRow(query, id).Scan(&task.ID, &task.Title, &task.Description, &task.CreatedAt, &task.UpdatedAt, &task.Status.Name, &task.Status.ID, &task.Category.Name, &task.Category.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil // or return a custom 404 error
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -114,15 +109,25 @@ func (th MySQLTasksService) CreateTask(task Task) (Task, error) {
 	}
 	defer stmt.Close()
 
-	fmt.Printf("%#v\n", task)
-
-	_, err = stmt.Exec(task.Title, task.Status.ID, task.Category.ID)
+	result, err := stmt.Exec(task.Title, task.Status.ID, task.Category.ID)
 	if err != nil {
 		fmt.Println(err.Error())
 		return task, err
 	}
 
-	return task, nil
+	insertedID, err := result.LastInsertId()
+	if err != nil {
+		fmt.Println("Failed to get inserted ID:", err)
+		return task, err
+	}
+
+	createdTask, err := th.GetTaskById(int64(insertedID))
+	if err != nil {
+		fmt.Printf("%#v", err)
+		return Task{}, err
+	}
+
+	return *createdTask, nil
 }
 
 func (th MySQLTasksService) DeleteTasks(id int64) error {

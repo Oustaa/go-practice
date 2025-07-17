@@ -4,5 +4,5 @@ import (
 	"embed"
 )
 
-//go:embed *.sql
+//go:embed *.sq
 var FS embed.FS
