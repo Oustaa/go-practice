@@ -86,6 +86,10 @@ func (th Taskshandler) PostTasksHandler(w http.ResponseWriter, r *http.Request) 
 		Description: taskBody.Description,
 	}
 
+	fmt.Println()
+	fmt.Printf("task to create body: %#v", task)
+	fmt.Println()
+
 	// Create the task
 	createdTask, err := th.TasksStore.CreateTask(task)
 

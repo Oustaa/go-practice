@@ -30,7 +30,7 @@ type StatusType struct {
 type TaskResponse struct {
 	ID          int          `json:"id"`
 	Title       string       `json:"title"`
-	Description string       `json:"description"`
+	Description *string      `json:"description"`
 	CreatedAt   string       `json:"created_at"`
 	UpdatedAt   string       `json:"updated_at"`
 	Category    CategoryType `json:"cateogry"`
@@ -102,16 +102,16 @@ func (th MySQLTasksService) GetTaskById(id int64) (*Task, error) {
 func (th MySQLTasksService) CreateTask(task Task) (Task, error) {
 	// this is in a must need for validations
 	stmt, err := th.DB.Prepare(`
-		INSERT INTO tasks(title, status_id, category_id) VALUES(?, ?, ?);`)
+		INSERT INTO tasks(title, status_id, category_id, description) VALUES(?, ?, ?, ?);`)
 	if err != nil {
 		fmt.Println(err.Error())
 		return task, err
 	}
 	defer stmt.Close()
 
-	result, err := stmt.Exec(task.Title, task.Status.ID, task.Category.ID)
+	result, err := stmt.Exec(task.Title, task.Status.ID, task.Category.ID, *task.Description)
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Println(err.Error(), "WALHEEBS")
 		return task, err
 	}
 
@@ -149,5 +149,10 @@ func (th MySQLTasksService) UpdateTask(id int64, task *Task) (*Task, error) {
 		return nil, err
 	}
 
-	return task, nil
+	updatedTask, err := th.GetTaskById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedTask, nil
 }
