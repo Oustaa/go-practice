@@ -7,15 +7,17 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 	"github.com/oustaa/go-practice/internal/store"
 )
 
 type CreateTaskBody struct {
-	Title       string  `json:"title"`
-	Status_id   int     `json:"status_id"`
-	Category_id int     `json:"category_id"`
+	Title       *string `json:"title" validate:"required"`
+	Status_id   *int    `json:"status_id" validate:"required,min=5"`
+	Category_id *int    `json:"category_id" validate:"required"`
 	Description *string `json:"description"`
 }
 
@@ -28,7 +30,29 @@ func NewTaskshandler(TasksStore *store.MySQLTasksService) *Taskshandler {
 }
 
 func (th Taskshandler) GetTasksHandler(w http.ResponseWriter, r *http.Request) {
-	tasks, err := th.TasksStore.GetTasks()
+	limitParam := r.URL.Query().Get("limit")
+	pageParam := r.URL.Query().Get("page")
+
+	if strings.Trim(limitParam, " ") == "" {
+		limitParam = "10"
+	}
+
+	if strings.Trim(pageParam, " ") == "" {
+		pageParam = "1"
+	}
+
+	limit, err := strconv.ParseInt(limitParam, 10, 64)
+	if err != nil {
+		http.Error(w, "id params is invalid", http.StatusBadRequest)
+		return
+	}
+	page, err := strconv.ParseInt(pageParam, 10, 64)
+	if err != nil {
+		http.Error(w, "id params is invalid", http.StatusBadRequest)
+		return
+	}
+
+	tasks, err := th.TasksStore.GetTasks(limit, page)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -70,25 +94,55 @@ func (th Taskshandler) GetTaskByIdHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (th Taskshandler) PostTasksHandler(w http.ResponseWriter, r *http.Request) {
+	var validate = validator.New()
 	// Get The Data from the body
 	var taskBody CreateTaskBody
 	json.NewDecoder(r.Body).Decode(&taskBody)
 	defer r.Body.Close()
 
+	err := validate.Struct(taskBody)
+	if err != nil {
+		var invalidValidationError *validator.InvalidValidationError
+		if errors.As(err, &invalidValidationError) {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{
+				"message": err.Error(),
+				"status":  http.StatusInternalServerError,
+			})
+			return
+		}
+
+		type ValidationErrors struct {
+			Errors map[string][]string `json:"errors,omitempty"`
+		}
+
+		validationErrors := make(map[string][]string)
+		for _, err := range err.(validator.ValidationErrors) {
+			fieldName := err.Field()
+			validationErrors[fieldName] = append(validationErrors[fieldName], err.Tag())
+		}
+
+		w.Header().Set("content-type", "applcation/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"code":    http.StatusBadRequest,
+			"message": "Validation error",
+			"body":    ValidationErrors{Errors: validationErrors},
+		})
+
+		return
+	}
+
 	task := store.Task{
-		Title: taskBody.Title,
+		Title: *taskBody.Title,
 		Category: store.CategoryType{
-			ID: taskBody.Category_id,
+			ID: *taskBody.Category_id,
 		},
 		Status: store.StatusType{
-			ID: taskBody.Status_id,
+			ID: *taskBody.Status_id,
 		},
 		Description: taskBody.Description,
 	}
-
-	fmt.Println()
-	fmt.Printf("task to create body: %#v", task)
-	fmt.Println()
 
 	// Create the task
 	createdTask, err := th.TasksStore.CreateTask(task)

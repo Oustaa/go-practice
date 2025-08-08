@@ -26,10 +26,10 @@ clean:
 
 # Database migrations
 db-migrate:
-	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING="$(DBSTRING)" goose -dir $(MIGRATION_DIR) up
+	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING=$(DBSTRING) goose -dir $(MIGRATION_DIR) up
 
 db-migrate-rollback:
-	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING="$(DBSTRING)" goose -dir $(MIGRATION_DIR) down
+	@GOOSE_DRIVER=$(DB_DRIVER) GOOSE_DBSTRING=$(DBSTRING) goose -dir $(MIGRATION_DIR) down
 
 # Database seeding
 db-seed:

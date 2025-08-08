@@ -45,7 +45,7 @@ func NewMySQLTasksService(DB *sql.DB) *MySQLTasksService {
 	return &MySQLTasksService{DB}
 }
 
-func (th MySQLTasksService) GetTasks() ([]Task, error) {
+func (th MySQLTasksService) GetTasks(limit, page int64) ([]Task, error) {
 	var tasks []Task
 
 	query := `
@@ -53,9 +53,11 @@ func (th MySQLTasksService) GetTasks() ([]Task, error) {
 		ON cat.id = t.category_id
 		JOIN tasks_statuses as st
 		ON st.id = t.status_id
+		LIMIT ?
+		OFFSET ?
 	`
 
-	rows, err := th.DB.Query(query)
+	rows, err := th.DB.Query(query, limit, limit*page-limit)
 	if err != nil {
 		return nil, err
 	}
